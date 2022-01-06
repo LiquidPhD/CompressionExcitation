@@ -1,5 +1,6 @@
 close all force; 
-for filterSizeIterator = 10:10:100
+% for filterSizeIterator = 10:10:100
+filterSizeIterator = 10
 opticFlow=opticalFlowFarneback; %% the method I used, I only tried LK and Farneback so far, and LK didn't show shit
 opticFlow.NumPyramidLevels=4;
 opticFlow.NeighborhoodSize=7;
@@ -45,7 +46,7 @@ end
 T = cumsum(flow_Vy,3);
 figure; imagesc(T(:,:,end));
 title(['Filter Size: ',num2str(filterSizeIterator)])
-end
+% end
 autoArrangeFigures
 
 

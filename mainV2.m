@@ -1,12 +1,12 @@
 clearvars;
-baseFolder = 'E:\HalfHalfAuto_111921_3';
+baseFolder = 'E:\GelatinHalfHalf20211221';
 %
 folders = rdir([baseFolder,filesep,'Dynamic\*\**\*Param*']);
 % [lowerBound] = selectLowerBound(folders)
 lowerBound = 1395
 %% Process dynamic data
 
-for folderIndex = 1:length(folders)
+for folderIndex = 36:length(folders)
     
     % Load dynamic data
     [IQData,VMIQ,vec_phase_diff,Parameters] = loadDynamicData(folders,folderIndex,lowerBound);
@@ -71,7 +71,7 @@ caxis([-0.1 0.1])
 end
 
 
-createDynamicGIFs(folders,[3 5],'jet')
+createDynamicGIFs(folders,[0 10],'jet')
 createDynamicGIFsSmoothed(folders,[3 5],'jet')
 
 %% Process static data
@@ -90,7 +90,7 @@ save([baseFolder,filesep,'combinedIQData.mat'],'IQData');
 zaxis = linspace(0,(Nz-1)*Parameters.delta_z,Nz)*1e3;                      %(mm) Aixial axis.
 xaxis = linspace(-(Nx-1)/2*Parameters.delta_x,(Nx-1)/2*Parameters.delta_x,Nx)*1e3;    %(mm) Lateral axis.
 taxis = linspace(0,(Nt-1)*Parameters.delta_t,Nt);
-
+[vec_phase_diff] = VPD(IQData)
 cutoffFrame = size(vec_phase_diff,3)
 figure;
 for frame = 2:16%cutoffFrame-3 %size(particleVelocity,3)

@@ -1,5 +1,5 @@
 clearvars;
-baseFolder = 'E:\ThinAgar121221';
+baseFolder = 'E:\GelatinHalfHalf20211221';
 startDepth = 1;
 lowerBound = 1395
 
