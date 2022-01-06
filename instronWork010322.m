@@ -1,6 +1,11 @@
 clearvars;
-CSVFiles = natsortfiles(rdir('E:\GelatinHalfHalf20211221\gelation_phantom_RIP_20211221.is_comp_RawData\*.csv'))
-for k = 13:16
+CSVFiles = natsortfiles(rdir('E:\Instron\thinAgarPhantom121221.is_comp_RawData\*.csv'))
+sensor = 1:7;
+soft = 8:14
+stiff = 15:21
+counter = 1;
+clearvars Extension Load
+for k = stiff
 opts = delimitedTextImportOptions("NumVariables", 3);
     
     % Specify range and delimiter
@@ -23,8 +28,9 @@ opts = delimitedTextImportOptions("NumVariables", 3);
     % Import the data
     SpecimenRawData1 = readtable(CSVFiles(k).name, opts);
     
-    Extension(k-12,:) = table2array(SpecimenRawData1(:,1));
-    Load(k-12,:) = table2array(SpecimenRawData1(:,2));
+    Extension(counter,:) = table2array(SpecimenRawData1(1:160,1));
+    Load(counter,:) = table2array(SpecimenRawData1(1:160,2));
+    counter = counter+1;
 end
 
 figure;
@@ -34,19 +40,28 @@ for k = 1:size(Extension,1)
 end
 hold off; 
 
-Extension = mean(Extension);
-Load = mean(Load);
+Extension = mean(Extension); % mm
+Load = mean(Load); % N 
 figure; plot(Extension,Load)
-d = 32.51
-h = 7.99
+d = 33.66   
+h = 10.17
 r = d/2;
 SA = pi*r^2 % mm^2
 SAm = SA*1e-6
 hm = h*1e-3
 STRESS = Load/SA;
 STRAIN = Extension/h;
+figure; plot(STRAIN*100,STRESS)
+ylabel('Stress')
+xlabel('Strain (%)')
+title('Stiff stress vs strain')
+% Units: N/m^2
 
-figure; plot(STRAIN,STRESS)
+STRESSm = Load/SAm
+STRAINm = Extension/hm;
+
+figure; plot(STRAINm,STRESSm);
+
 
 STRAIN = STRAIN(62:end);
 STRESS = STRESS(62:end);

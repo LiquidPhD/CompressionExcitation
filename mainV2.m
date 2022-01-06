@@ -1,16 +1,22 @@
 clearvars;
-baseFolder = 'E:\GelatinHalfHalf20211221';
+baseFolder = 'E:\ThinAgar121221';
 %
 folders = rdir([baseFolder,filesep,'Dynamic\*\**\*Param*']);
 % [lowerBound] = selectLowerBound(folders)
 lowerBound = 1395
 %% Process dynamic data
 
-for folderIndex = 36:length(folders)
+for folderIndex = 1:length(folders)
     
     % Load dynamic data
     [IQData,VMIQ,vec_phase_diff,Parameters] = loadDynamicData(folders,folderIndex,lowerBound);
     
+    % 2D Loupas
+sdl = ones([1 size(IQData,2)]);
+[~,Loupas_phase_shift] = ...
+    Loupas_estimator_USE(IQData, sdl);
+Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
+
     % Get particle velocity
 %     [particleVelocity,BScan] = calculateParticleVelocity(IQData,Parameters);
     BScan = mat2gray(abs(IQData));
