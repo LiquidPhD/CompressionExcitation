@@ -1,12 +1,12 @@
 clearvars;
-baseFolder = 'E:\ThinAgar121221';
+baseFolder = 'D:\AgarHalfHalf01142022';
 %
 folders = rdir([baseFolder,filesep,'Dynamic\*\**\*Param*']);
 % [lowerBound] = selectLowerBound(folders)
 lowerBound = 1395
 %% Process dynamic data
 
-for folderIndex = 1:length(folders)
+for folderIndex = 99:length(folders)
     
     % Load dynamic data
     [IQData,VMIQ,vec_phase_diff,Parameters] = loadDynamicData(folders,folderIndex,lowerBound);
@@ -77,7 +77,7 @@ caxis([-0.1 0.1])
 end
 
 
-createDynamicGIFs(folders,[0 10],'jet')
+createDynamicGIFs(folders,[0 15],'jet')
 createDynamicGIFsSmoothed(folders,[3 5],'jet')
 
 %% Process static data

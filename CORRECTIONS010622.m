@@ -1,5 +1,5 @@
 clearvars;
-baseFolder = 'E:\ThinAgar121221';
+baseFolder = 'D:\AgarHalfHalf01142022';
 startDepth = 1;
 lowerBound = 1395
 
@@ -42,7 +42,7 @@ Parameters.fc = Parameters.Trans.frequency*1e6;
 Parameters.c=1500;
     folderIndex = 1;
 else
-[IQData,Parameters] = loadStaticData(folders,lowerBound,length(folders));
+[IQData,Parameters] = loadStaticDataGaussFilt(folders,lowerBound,length(folders));
 folderIndex = 1;
 save([baseFolder,filesep,'combinedIQData.mat'],'IQData','Parameters');
 % load('StrainImages.mat')
@@ -50,10 +50,13 @@ save([baseFolder,filesep,'combinedIQData.mat'],'IQData','Parameters');
 end
 
 % Take out known bad areas
-% IQData(:,:,28) = []; IQData(:,:,17) = []; 
+IQData(:,:,28) = []; IQData(:,:,17) = []; 
+IQData = IQData(:,:,1:26);
+
+
 
 % Calc vec phase diff
-[vec_phase_diff] = VPD(IQData);
+[vec_phase_diff,VMIQ] = VPD(IQData);
 
 % 2D Loupas
 sdl = ones([1 size(IQData,2)]);
@@ -61,12 +64,13 @@ sdl = ones([1 size(IQData,2)]);
     Loupas_estimator_USE(IQData, sdl);
 Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
 
+displacementData = cumsum(Loupas_phase_shift,3);
 
 % Use frames 1:26
-Loupas_phase_shift = Loupas_phase_shift(:,:,1:26);
+% Loupas_phase_shift = Loupas_phase_shift(:,:,1:26);
 % Sizes for further processing
 
-[Nz,Nx,Nt]= size(Loupas_phase_shift);         % The dimensions of data in the z axis, the x axis and time.
+[Nz,Nx,Nt]= size(vec_phase_diff);         % The dimensions of data in the z axis, the x axis and time.
 % Nz = 1395;
 zaxis = linspace(0,(Nz-1)*Parameters.delta_z,Nz)*1e3;                      %(mm) Aixial axis.
 xaxis = linspace(-(Nx-1)/2*Parameters.delta_x,(Nx-1)/2*Parameters.delta_x,Nx)*1e3;    %(mm) Lateral axis.
@@ -81,10 +85,11 @@ try
     load([baseFolder,filesep,'labels.mat'])
 catch
 volumeSegmenter
+uiwait;
 save([baseFolder,filesep,'labels.mat'],'labels')
 end
 
-for imageIterator = 2:size(Loupas_phase_shift,3)
+for imageIterator = 2:size(vec_phase_diff,3)
     
   close all force; 
 figure;
@@ -105,17 +110,18 @@ caxis([0 25])
 export_fig([baseFolder,filesep,'BScan',num2str(imageIterator),'.png'])
 save([baseFolder,filesep,'BScan',num2str(imageIterator),'.fig'])
 
-imageToProcess = Loupas_phase_shift(:,:,imageIterator);
+% imageToProcess = Loupas_phase_shift(:,:,imageIterator);
+imageToProcess = displacementData(:,:,imageIterator);
 
 
 figure; 
 imagesc(xaxis,zaxis(1:670),imageToProcess(1:670,:))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
-title("Wrapped particle velocity using 2D Loupas")
+title("Wrapped particle velocity using vector phase difference")
 colorbar;
-export_fig([baseFolder,filesep,'PV',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'PV',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'PVVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'PVVPD',num2str(imageIterator),'.fig'])
 % Separate out labels
 
 for k = 1:size(labels,3)
@@ -169,8 +175,8 @@ ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Unwrapped Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'UnwrappedPV',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'UnwrappedPV',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'UnwrappedPVVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'UnwrappedPVVPD',num2str(imageIterator),'.fig'])
 
 
 for pos = 1:size(vec_whole,2)
@@ -202,8 +208,8 @@ ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Corrected Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'CorrectedPV',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'CorrectedPV',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'CorrectedPVVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'CorrectedPVVPD',num2str(imageIterator),'.fig'])
 
 x_kern = 20;
 % dis_cumsum = dis_cumsum(:,:,end);
@@ -279,8 +285,8 @@ ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Smoothed Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'SmoothedPV',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'SmoothedPV',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'SmoothedPVVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'SmoothedPVVPD',num2str(imageIterator),'.fig'])
 
 
 corrected_sensor = abs(corrected_whole).*sensorMaskStack(:,:,imageIterator);
@@ -301,8 +307,8 @@ ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Smoothed Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'CorrectedSmoothedWholeAbs',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'CorrectedSmoothedWholeAbs',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'CorrectedSmoothedWholeAbsVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'CorrectedSmoothedWholeAbsVPD',num2str(imageIterator),'.fig'])
 
 
 
@@ -471,8 +477,8 @@ caxis([CLow CHigh])
 xlabel('Distance (mm)')
 ylabel('Depth (mm)')
 title('Strain')
-export_fig([baseFolder,filesep,'StrainMapNew',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'StrainMapNew',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'StrainMapNewVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'StrainMapNewVPD',num2str(imageIterator),'.fig'])
 strainStack(:,:,imageIterator) = abs(strain_whole);
 
 stressSensor = abs(YMMean.*(strain_sensor));
@@ -489,8 +495,8 @@ xlabel('Distance (mm)')
 ylabel("Stress")
 % ylim([40 70])
 title("Stress in Sensor")
-export_fig([baseFolder,filesep,'sensorStress',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'sensorStress',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'sensorStressVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'sensorStressVPD',num2str(imageIterator),'.fig'])
 % Try: Uniform stress in L and R sides.
 % 
 % stressSensor2(1:round(length(stressSensor)/2)) = mean(stressSensor(145:210));
@@ -655,8 +661,8 @@ h = colorbar;
 ylabel(h,'YM (kPa)')
 title(ax1,"Young's modulus using shear wave")
 
-export_fig([baseFolder,filesep,'YMOverlaySWNew',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'YMOverlaySWNew',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'YMOverlaySWNewVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'YMOverlaySWNewVPD',num2str(imageIterator),'.fig'])
 YMSW(:,:,imageIterator) = YMTotalSmoothed;
 
 
@@ -708,8 +714,8 @@ linkprop([ax1 ax2],'Position');
 title(ax1,"Mean Young's modulus using shear wave")
 
 
-export_fig([baseFolder,filesep,'YMAvgOverlay',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'YMAvgOverlay',num2str(imageIterator),'.fig'])
+export_fig([baseFolder,filesep,'YMAvgOverlayVPD',num2str(imageIterator),'.png'])
+save([baseFolder,filesep,'YMAvgOverlayVPD',num2str(imageIterator),'.fig'])
 % sensorInstron = [47.91195
 % 44.8882
 % 39.04582
