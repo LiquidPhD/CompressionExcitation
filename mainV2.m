@@ -4,9 +4,10 @@ baseFolder = 'D:\AgarHalfHalf01142022';
 folders = rdir([baseFolder,filesep,'Dynamic\*\**\*Param*']);
 % [lowerBound] = selectLowerBound(folders)
 lowerBound = 1395
+filterFlag = 0;
 %% Process dynamic data
 
-for folderIndex = 99:length(folders)
+for folderIndex = 88:length(folders)
     
     % Load dynamic data
     [IQData,VMIQ,vec_phase_diff,Parameters] = loadDynamicData(folders,folderIndex,lowerBound);
@@ -38,12 +39,12 @@ Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
     %     [wavelength,selectedFreq,frequencyMap] = runPassive(particleVelocity,BScan,Parameters,folderIndex)
     % TOF algorithm
     position = [0 0 0 0]
-    N_radius = 50
+    N_radius = 20
     [TOF_speed] = runTOF(double(vec_phase_diff),Parameters,folderIndex,position,N_radius)
     pause(10)
     save([folders(folderIndex).folder,filesep,'speedProcessing.mat'],'-v7.3')
     
-    figure; imagesc(xaxis,zaxis,TOF_speed,[0,10]);axis equal tight
+    figure; imagesc(xaxis,zaxis,TOF_speed,[0,15]);axis equal tight
     title('Shear speed map');ylabel('Axial'); xlabel('Lateral');colormap('jet');
     h = colorbar; xlabel(h,'(m/s)','FontSize',14)
     export_fig([folders(folderIndex).folder,filesep,'ShearSpeedMap.png'])
@@ -77,7 +78,7 @@ caxis([-0.1 0.1])
 end
 
 
-createDynamicGIFs(folders,[0 15],'jet')
+createDynamicGIFs(folders,[0 20],'jet')
 createDynamicGIFsSmoothed(folders,[3 5],'jet')
 
 %% Process static data

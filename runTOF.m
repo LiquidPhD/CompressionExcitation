@@ -1,4 +1,4 @@
-function [TOF_speed] = runTOF(particleVelocity,Parameters,folderIndex,position,N_radius)
+function [TOF_speed,corrCoeff] = runTOF(particleVelocity,Parameters,folderIndex,position,N_radius)
 debugMode = 0;
 
 disp_z = particleVelocity(:,:,2:90);  % The first frame is normally very noisy.
@@ -92,130 +92,159 @@ disp_z = particleVelocity(:,:,2:90);  % The first frame is normally very noisy.
         
         % TOF = zeros(Nz_desamp,Nx);
         TOF = zeros(size(disp_z_smooth_desamp_interp,1),Nx)
-        N_radius = 25; % Half distance for choosing reference waveform. [ADJUSTABLE]
+%         N_radius = 20; % Half distance for choosing reference waveform. [ADJUSTABLE]
         tic();
-        
-%         if folderIndex == 1 %|| ~exist('b','var')
-%             % for ii = 1:Nz_desamp
-% %             figure;
-% %             imagesc(disp_z_smooth_desamp_interp(:,:,10));
-% %             [x,y] = ginput(1)
-% %             
-% %             waveform_left = squeeze(disp_z_smooth_desamp_interp(round(y),round(x),:))
-% %             
-% %             
-% %             
-% %             % Fernando filtering
-% %             
-%             Ts = delta_t_interp;
-% %             Line = waveform_left;
-% %             FFT = fft(Line,2^12);
-% %             freq = linspace(0,1,2^12)/Ts;
-% %             
-% %             Time = [0:Ts:(length(waveform_left)-1)*Ts]*1e3;
-% %             
-% %             fig = figure;
-% %             plot(freq,abs(FFT))
-% %             grid on
-% %             ylabel('Magnitude (Arb.)');
-% %             xlabel('Frequency (Hz)');
-% %             title('FFT of the signal');
-% %             axis([0 4000 0 max(abs(FFT))*1.1])
-% %             h = imrect(gca,[1e3-200,-200,400,(max(abs(FFT))*1.1)+400]);
-% %             position = wait(h);
+        filterFlag = evalin('base','filterFlag')
+        if filterFlag == 0 %|| ~exist('b','var')
+            % for ii = 1:Nz_desamp
+            figure;
+            imagesc(disp_z_smooth_desamp_interp(:,:,10));
+            [x,y] = ginput(1)
+            
+            waveform_left = squeeze(disp_z_smooth_desamp_interp(round(y),round(x),:))
+            
+            
+%             
+%             % Fernando filtering
+%             
+            Ts = delta_t_interp;
+            Line = waveform_left;
+            FFT = fft(Line,2^12);
+            freq = linspace(0,1,2^12)/Ts;
+            
+            Time = [0:Ts:(length(waveform_left)-1)*Ts]*1e3;
+            
+            fig = figure;
+            plot(freq,abs(FFT))
+            grid on
+            ylabel('Magnitude (Arb.)');
+            xlabel('Frequency (Hz)');
+            title('FFT of the signal');
+            axis([0 4000 0 max(abs(FFT))*1.1])
+            h = imrect(gca,[1e3-200,-200,400,(max(abs(FFT))*1.1)+400]);
+            position = wait(h);
 % position = [25.8064516129029,-200.010743994973,1478.34101382489,401.228396758631]
-%             b = fir1(50,[position(1)*2*Ts (position(1)+position(3))*2*Ts]);
-% 
-%             delay = mean(grpdelay(b));
-%             assignin('base','b',b);
-%         else
-%             b = evalin('base','b');
-%             delay = mean(grpdelay(b));
-%         end
+            b = fir1(50,[position(1)*2*Ts (position(1)+position(3))*2*Ts]);
+
+            delay = mean(grpdelay(b));
+            assignin('base','b',b);
+            assignin('base','filterFlag',1);
+        else
+            b = evalin('base','b');
+            delay = mean(grpdelay(b));
+        end
         
         
         progressbar('ii','jj')
-        for ii = 1:size(disp_z_smooth_desamp_interp,1)
-            counter = 1;
-            for jj = N_radius+1:Nx-N_radius
-                waveform_left = squeeze(disp_z_smooth_desamp_interp(ii,jj-N_radius,:));
-%                 waveform_left = [filter(b,1,waveform_left(delay+1:end)); zeros(1,delay)'];
+%         for ii = 1:size(disp_z_smooth_desamp_interp,1)
+%             counter = 1;
+%             for jj = N_radius+1:Nx-N_radius
+%                 waveform_left = squeeze(disp_z_smooth_desamp_interp(ii,jj-N_radius,:));
+% %                 waveform_left = [filter(b,1,waveform_left(delay+1:end)); zeros(1,delay)'];
+%                 waveform_left = detrend(waveform_left);
+%                 waveform_right = squeeze(disp_z_smooth_desamp_interp(ii,jj+N_radius,:));
+% %                 waveform_right = [filter(b,1,waveform_right(delay+1:end)); zeros(1,delay)'];
+%                 waveform_right = detrend(waveform_right);
+%                 
+%                 [acor,lag] = xcorr(waveform_left,waveform_right);
+%                 [pks, locs] = findpeaks(acor,'SortStr','descend','NPeaks',3);
+%                 peaks = lag(locs);
+%                 
+%                 
+%                 if folderIndex <= 50 % Center excitation
+%                     if jj < round(size(particleVelocity,2)/2)
+%                         newPeaks = abs(peaks(find(peaks > 10)));
+%                         if ~isempty(newPeaks)
+%                             newPeaks = newPeaks(1);
+%                             newLag = newPeaks;
+%                         else
+%                             newLag = 0;
+%                         end
+%                     else
+%                         newPeaks = abs(peaks(find(peaks < -10)));
+%                         if ~isempty(newPeaks)
+%                             newPeaks = newPeaks(1);
+%                             newLag = newPeaks;
+%                         else
+%                             newLag = 0;
+%                         end
+%                     end
+%                 elseif 50 < folderIndex && folderIndex <= 100 % Left excitation
+%                     if jj < 133
+%                         newPeaks = abs(peaks(find(peaks > 10)));
+%                         if ~isempty(newPeaks)
+%                             newPeaks = newPeaks(1);
+%                             newLag = newPeaks;
+%                         else
+%                             newLag = 0;
+%                         end
+%                     else
+%                         newPeaks = abs(peaks(find(peaks < -10)));
+%                         if ~isempty(newPeaks)
+%                             newPeaks = newPeaks(1);
+%                             newLag = newPeaks;
+%                         else
+%                             newLag = 0;
+%                         end
+%                     end
+%                 else % Right excitation
+%                     if jj < 446
+%                         newPeaks = abs(peaks(find(peaks > 10)));
+%                         if ~isempty(newPeaks)
+%                             newPeaks = newPeaks(1);
+%                             newLag = newPeaks;
+%                         else
+%                             newLag = 0;
+%                         end
+%                     else
+%                         newPeaks = abs(peaks(find(peaks < -10)));
+%                         if ~isempty(newPeaks)
+%                             newPeaks = newPeaks(1);
+%                             newLag = newPeaks;
+%                         else
+%                             newLag = 0;
+%                         end
+%                     end
+%                 end
+%                 %                     [~,I] = min(acor);
+%                 %                 [~,I] = max(acor);
+%                 %                 end
+%                 %                 TOF(ii,jj) = abs(lag(I)*delta_t_interp);
+%                 TOF(ii,jj) = abs(newLag*delta_t_interp);
+%                 
+%                 progressbar([],counter/length(N_radius+1:Nx-N_radius))
+%                 counter = counter+ 1;
+%             end
+%             progressbar(ii/size(disp_z_smooth_desamp_interp,1))
+%         end
+
+
+% TOF = zeros(Nz_desamp,Nx);
+tic();
+for ii = 1:1:size(disp_z_smooth_desamp_interp,1)
+    counter = 1;
+    for jj = N_radius+1:Nx-N_radius
+        waveform_left = squeeze(disp_z_smooth_desamp_interp(ii,jj-N_radius,:));
+                waveform_left = [filter(b,1,waveform_left(delay+1:end)); zeros(1,delay)'];
                 waveform_left = detrend(waveform_left);
                 waveform_right = squeeze(disp_z_smooth_desamp_interp(ii,jj+N_radius,:));
-%                 waveform_right = [filter(b,1,waveform_right(delay+1:end)); zeros(1,delay)'];
+                waveform_right = [filter(b,1,waveform_right(delay+1:end)); zeros(1,delay)'];
                 waveform_right = detrend(waveform_right);
-                
-                [acor,lag] = xcorr(waveform_left,waveform_right);
-                [pks, locs] = findpeaks(acor,'SortStr','descend','NPeaks',3);
-                peaks = lag(locs);
-                
-                
-                if folderIndex <= 50 % Center excitation
-                    if jj < round(size(particleVelocity,2)/2)
-                        newPeaks = abs(peaks(find(peaks > 10)));
-                        if ~isempty(newPeaks)
-                            newPeaks = newPeaks(1);
-                            newLag = newPeaks;
-                        else
-                            newLag = 0;
-                        end
-                    else
-                        newPeaks = abs(peaks(find(peaks < -10)));
-                        if ~isempty(newPeaks)
-                            newPeaks = newPeaks(1);
-                            newLag = newPeaks;
-                        else
-                            newLag = 0;
-                        end
-                    end
-                elseif 50 < folderIndex && folderIndex <= 100 % Left excitation
-                    if jj < 133
-                        newPeaks = abs(peaks(find(peaks > 10)));
-                        if ~isempty(newPeaks)
-                            newPeaks = newPeaks(1);
-                            newLag = newPeaks;
-                        else
-                            newLag = 0;
-                        end
-                    else
-                        newPeaks = abs(peaks(find(peaks < -10)));
-                        if ~isempty(newPeaks)
-                            newPeaks = newPeaks(1);
-                            newLag = newPeaks;
-                        else
-                            newLag = 0;
-                        end
-                    end
-                else % Right excitation
-                    if jj < 446
-                        newPeaks = abs(peaks(find(peaks > 10)));
-                        if ~isempty(newPeaks)
-                            newPeaks = newPeaks(1);
-                            newLag = newPeaks;
-                        else
-                            newLag = 0;
-                        end
-                    else
-                        newPeaks = abs(peaks(find(peaks < -10)));
-                        if ~isempty(newPeaks)
-                            newPeaks = newPeaks(1);
-                            newLag = newPeaks;
-                        else
-                            newLag = 0;
-                        end
-                    end
-                end
-                %                     [~,I] = min(acor);
-                %                 [~,I] = max(acor);
-                %                 end
-                %                 TOF(ii,jj) = abs(lag(I)*delta_t_interp);
-                TOF(ii,jj) = abs(newLag*delta_t_interp);
-                
-                progressbar([],counter/length(N_radius+1:Nx-N_radius))
-                counter = counter+ 1;
-            end
-            progressbar(ii/size(disp_z_smooth_desamp_interp,1))
-        end
+%         waveform_left = squeeze(disp_z_smooth_desamp_interp(ii,jj-N_radius,:));
+%         waveform_right = squeeze(disp_z_smooth_desamp_interp(ii,jj+N_radius,:));
+        [acornorm,lag] = xcorr(waveform_left,waveform_right,'normalized');
+                [M,INorm] = max(acornorm);
+        corrCoeff(ii,jj) = M;
+
+[acor,lag] = xcorr(waveform_left,waveform_right);
+        [~,I] = max(acor);
+        TOF(ii,jj) = abs(lag(I)*delta_t_interp);
+                        progressbar([],counter/length(N_radius+1:Nx-N_radius))
+counter = counter+1;
+    end
+                progressbar(ii/size(disp_z_smooth_desamp_interp,1))
+
+end
         toc();
         TOF_speed = 2*N_radius*Parameters.delta_x./TOF;
         elasticity = density*TOF_speed.^2/1000;
@@ -240,6 +269,6 @@ disp_z = particleVelocity(:,:,2:90);  % The first frame is normally very noisy.
             pause
         end
 
-        figure; imagesc(xaxis,zaxis_desamp,TOF_speed,[0,10]);axis equal tight
+        figure; imagesc(xaxis,zaxis_desamp,TOF_speed,[0,20]);axis equal tight
         title('Shear speed map');ylabel('Axial'); xlabel('Lateral');colormap('jet');
         h = colorbar; xlabel(h,'(m/s)','FontSize',14)

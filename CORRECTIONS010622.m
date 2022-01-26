@@ -50,10 +50,10 @@ save([baseFolder,filesep,'combinedIQData.mat'],'IQData','Parameters');
 end
 
 % Take out known bad areas
-IQData(:,:,28) = []; IQData(:,:,17) = []; 
-IQData = IQData(:,:,1:26);
-
-
+% IQData(:,:,28) = []; IQData(:,:,17) = []; 
+% IQData = IQData(:,:,1:26);
+% IQData = IQData(:,:,10:end);
+% VELOCITIES = VELOCITIES(:,:,10:end);
 
 % Calc vec phase diff
 [vec_phase_diff,VMIQ] = VPD(IQData);
@@ -77,7 +77,7 @@ xaxis = linspace(-(Nx-1)/2*Parameters.delta_x,(Nx-1)/2*Parameters.delta_x,Nx)*1e
 taxis = linspace(0,(Nt-1)*Parameters.delta_t,Nt);
 % zaxis = zaxis(startDepth:end);
 images = mat2gray(abs(IQData));
-
+figFlag = 0;
 
 
 % Either load label data or make it
@@ -89,16 +89,16 @@ uiwait;
 save([baseFolder,filesep,'labels.mat'],'labels')
 end
 
-for imageIterator = 2:size(vec_phase_diff,3)
+for imageIterator = 2:size(displacementData,3)
     
   close all force; 
 figure;
 ax1 = axes;
 
-TEST = mat2gray(abs(IQData(1:670,:,imageIterator)));
+TEST = mat2gray(abs(IQData(1:size(VELOCITIES,1),:,imageIterator)));
 % TEST(TEST>0.1) = 0.1; TEST(TEST<0) = 0; figure; imagesc(TEST)
 TEST = 255*TEST;
-imagesc(ax1,xaxis,zaxis(1:670),TEST(1:670,:));
+imagesc(ax1,xaxis,zaxis(1:size(VELOCITIES,1)),TEST(1:size(VELOCITIES,1),:));
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 colormap(ax1,'gray');
@@ -106,22 +106,22 @@ caxis([0 25])
 % h = colorbar;
 % ylabel(h,'YM (kPa)')
 % title(ax1,"Young's modulus using shear wave")
-
-export_fig([baseFolder,filesep,'BScan',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'BScan',num2str(imageIterator),'.fig'])
+filename = [baseFolder,filesep,'BScan',num2str(imageIterator)];
+figSave(filename,'.png',figFlag)
 
 % imageToProcess = Loupas_phase_shift(:,:,imageIterator);
 imageToProcess = displacementData(:,:,imageIterator);
 
 
 figure; 
-imagesc(xaxis,zaxis(1:670),imageToProcess(1:670,:))
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),imageToProcess(1:size(VELOCITIES,1),:))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
-title("Wrapped particle velocity using vector phase difference")
+title("Wrapped Displacement")
 colorbar;
-export_fig([baseFolder,filesep,'PVVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'PVVPD',num2str(imageIterator),'.fig'])
+filename = [baseFolder,filesep,'Disp',num2str(imageIterator)];
+figSave(filename,'.png',figFlag)
+% save([baseFolder,filesep,'Disp',num2str(imageIterator),'.fig'])
 % Separate out labels
 
 for k = 1:size(labels,3)
@@ -170,13 +170,14 @@ unwrapped_whole = phase_unwrap(vec_whole);
 
 
 figure; 
-imagesc(xaxis,zaxis(1:670),unwrapped_whole(1:670,:))
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),unwrapped_whole(1:size(VELOCITIES,1),:))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
-title("Unwrapped Particle Velocity")
+title("Unwrapped Displacement")
 colorbar;
-export_fig([baseFolder,filesep,'UnwrappedPVVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'UnwrappedPVVPD',num2str(imageIterator),'.fig'])
+filename = [baseFolder,filesep,'UnwrappedDisp',num2str(imageIterator)];
+% save([baseFolder,filesep,'UnwrappedPV',num2str(imageIterator),'.fig'])
+figSave(filename,'.png',figFlag)
 
 
 for pos = 1:size(vec_whole,2)
@@ -203,13 +204,13 @@ corrected_whole = corrected_sensor+corrected_left+corrected_right;
 
 
 figure; 
-imagesc(xaxis,zaxis(1:670),corrected_whole(1:670,:))
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),corrected_whole(1:size(VELOCITIES,1),:))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Corrected Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'CorrectedPVVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'CorrectedPVVPD',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'CorrectedDisp',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 
 x_kern = 20;
 % dis_cumsum = dis_cumsum(:,:,end);
@@ -280,13 +281,13 @@ corrected_whole = fitted_displacement;
 
 
 figure; 
-imagesc(xaxis,zaxis(1:670),corrected_whole(1:670,:))
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),corrected_whole(1:size(VELOCITIES,1),:))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Smoothed Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'SmoothedPVVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'SmoothedPVVPD',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'SmoothedDisp',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 
 
 corrected_sensor = abs(corrected_whole).*sensorMaskStack(:,:,imageIterator);
@@ -302,30 +303,41 @@ figure; imagesc(corrected_right)
 
 correctedWholeAbs = corrected_right+corrected_left+corrected_sensor;
 figure; 
-imagesc(xaxis,zaxis(1:670),abs(correctedWholeAbs(1:670,:)))
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),abs(correctedWholeAbs(1:size(VELOCITIES,1),:)))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Smoothed Particle Velocity")
 colorbar;
-export_fig([baseFolder,filesep,'CorrectedSmoothedWholeAbsVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'CorrectedSmoothedWholeAbsVPD',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'CorrectedSmoothedWholeAbs',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 
 
 
 speed_sensor = VELOCITIES(:,:,imageIterator).*sensorMaskStack(1:size(VELOCITIES,1),:,imageIterator);
 % speed_sensor(speed_sensor==0) = NaN;
 speed_sensor(isnan(speed_sensor))=0;
-
+CC = CC(1:size(speed_sensor,1),:,:);
+CCCurrent = zeros([size(speed_sensor,1) size(speed_sensor,2)]);
+CCCurrent(:,21:end) = squeeze(CC(:,:,imageIterator));
+for k = 1:size(speed_sensor,1)
+    for l = 1:size(speed_sensor,2)
+        if CCCurrent(k,l) > 0.7
+            speed_sensorCC(k,l) = speed_sensor(k,l);
+        else
+            speed_sensorCC(k,l) = NaN;
+        end
+    end
+end
 
 figure; 
-imagesc(xaxis,zaxis(1:670),abs(speed_sensor(1:670,:)))
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),abs(speed_sensorCC(1:size(VELOCITIES,1),:)))
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
-title("Smoothed Particle Velocity")
+title("Smoothed Particle Velocity, Xcorr > 0.7")
 colorbar;
-caxis([0 10])
-export_fig([baseFolder,filesep,'SensorSpeed',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'SensorSpeed',num2str(imageIterator),'.fig'])
+caxis([0 20])
+filename = ([baseFolder,filesep,'SensorSpeed',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 % 
 % x_kern = 20;
 % % dis_cumsum = dis_cumsum(:,:,end);
@@ -413,34 +425,61 @@ save([baseFolder,filesep,'SensorSpeed',num2str(imageIterator),'.fig'])
 % figure; imagesc(speed_sensor)
 % [~,y] = ginput(1)
 % Shear wave YM: 3*rho*c^2
-YM_sensor = 3*1000*speed_sensor.^2; % in Pa
+YM_sensor = 3*1000*speed_sensorCC.^2; % in Pa
 
 
 figure; 
-imagesc(xaxis,zaxis(1:670),abs(YM_sensor(1:670,:))/1000)
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),abs(YM_sensor(1:size(VELOCITIES,1),:))/1000)
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 title("Sensor Young's modulus")
 h = colorbar;
 ylabel(h,'YM (kPa)')
 caxis([0 200])
-export_fig([baseFolder,filesep,'SensorSpeed',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'SensorSpeed',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'SensorSpeed',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 
 
-YMMean = mean(YM_sensor(sensor_bdl-50:sensor_bdl,:),1,'omitnan');
-figure; plot(YMMean)
-YMMean(1:round(length(YMMean)/2)) = mean(YMMean(50:150));
-YMMean(round(length(YMMean)/2)+1:length(YMMean)) = mean(YMMean(400:500));
+% for k = 1:length(sensor_bdl)
+%     sensorDepth = sensor_bdl(:,k) - 50;
+%     if sensorDepth < 0
+%         sensorDepth = 0;
+%     end
+%     usableSensor(:,k) = sensorDepth;
+% end
+%     usableSensor = filloutliers(usableSensor,'nearest');
+sensorTop = sensor_bdl-30;
+% sensorTop = filloutliers(sensorTop,'nearest')
+for k = 1:size(YM_sensor,2)
+    
+    YMMean(:,k) = mean(YM_sensor(sensorTop(k):end,k),1,'omitnan');
+end
+YMMean(287:359) = NaN;
+YMMean(YMMean==0) = NaN;
+% 
+% % Manual selection
+% figure; plot(YMMean); hold on;
+% [x1,~] = ginput(1)
+% vline(x1)
+% [x2,~] = ginput(1)
+% vline(x2)
+% [x3,~] = ginput(1)
+% vline(x3)
+% [x4,~] = ginput(1)
+% vline(x4)
+
+% YMMean = filloutliers(YMMean,'makima');
+YMMean(1:round(length(YMMean)/2)) = mean(YMMean(1:round(length(YMMean)/2)),'omitnan');
+YMMean(round(length(YMMean)/2)+1:length(YMMean)) = mean(YMMean(round(length(YMMean)/2)+1:length(YMMean)),'omitnan');
 
 figure; plot(YMMean/1000)
 xlabel('Distance (mm)')
 ylabel("Young's modulus (kPa)")
-ylim([40 70])
+% ylim([0 50])
 title("Mean Young's modulus across samples")
-export_fig([baseFolder,filesep,'meanYM',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'meanYM',num2str(imageIterator),'.fig'])
-
+filename = ([baseFolder,filesep,'meanYM',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
+YMSensorStack(:,:,imageIterator) = YMMean/1000;
 %  [xData, yData] = prepareCurveData( [], YMMean );
 %     
 %     % Set up fittype and options.
@@ -472,13 +511,13 @@ if isnan(CHigh)
     CHigh = 10;
 end
 figure;
-imagesc(xaxis,zaxis(1:670),abs(strain_whole(1:670,:))); colormap(hot); colorbar; 
+imagesc(xaxis,zaxis(1:size(VELOCITIES,1)),abs(strain_whole(1:size(VELOCITIES,1),:))); colormap(hot); colorbar; 
 caxis([CLow CHigh])
 xlabel('Distance (mm)')
 ylabel('Depth (mm)')
 title('Strain')
-export_fig([baseFolder,filesep,'StrainMapNewVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'StrainMapNewVPD',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'StrainMap',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 strainStack(:,:,imageIterator) = abs(strain_whole);
 
 stressSensor = abs(YMMean.*(strain_sensor));
@@ -495,8 +534,9 @@ xlabel('Distance (mm)')
 ylabel("Stress")
 % ylim([40 70])
 title("Stress in Sensor")
-export_fig([baseFolder,filesep,'sensorStressVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'sensorStressVPD',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'sensorStress',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
+sensorStressStack(:,:,imageIterator) = stressSensor;
 % Try: Uniform stress in L and R sides.
 % 
 % stressSensor2(1:round(length(stressSensor)/2)) = mean(stressSensor(145:210));
@@ -527,10 +567,11 @@ YMLeft(isinf(YMLeft)) = 0;
 YMRight = abs(stressSensor3)./(abs(strain_right));
 YMRight(isinf(YMRight)) = 0;
 YMTotal = YMLeft + YMRight;
-
+YMTotal(YMTotal==0) = NaN;
+YMTotal = filloutliers(YMTotal,'nearest');
 figure; imagesc(YMTotal/1000); colormap(jet); caxis([0 100]) % in kPa
 figure; imagesc(YMTotal)
-
+YMTotal(isnan(YMTotal)) = 0;
 % figure; imagesc(YMLeft); caxis([0 600]);
 % 
 % colormap(jet)
@@ -625,34 +666,38 @@ for x = 1:BScanWidth%size(displacement,1)
 end
 
 YMTotalSmoothed = fitted_displacement;
-
+% YMTotalSmoothed(YMTotalSmoothed==0) = NaN;
+% YMTotalSmoothed = filloutliers(YMTotalSmoothed,'nearest');
 YMLeftAvg3 = mean(YMTotalSmoothed.*leftMaskStack(:,:,imageIterator),'all','omitnan')
 YMRightAvg3 = mean(YMTotalSmoothed.*rightMaskStack(:,:,imageIterator),'all','omitnan')
-
+YMStack(:,:,imageIterator) = YMTotalSmoothed;
 figure; imagesc(YMTotalSmoothed/1000); caxis([0 500])
 figure; imagesc(YMTotal/1000); caxis([0 750])
 
 % Convert to kPa
 YMTotalSmoothed = YMTotalSmoothed/1000;
+YMStack(:,:,imageIterator) = YMTotalSmoothed;
+YMLeftStack(:,:,imageIterator) = YMLeftAvg3/1000;
+YMRightStack(:,:,imageIterator) = YMRightAvg3/1000;
 close all force; 
 figure;
 ax1 = axes;
 
-TEST = mat2gray(abs(IQData(1:670,:,imageIterator)));
+TEST = mat2gray(abs(IQData(1:size(VELOCITIES,1),:,imageIterator)));
 % TEST(TEST>0.1) = 0.1; TEST(TEST<0) = 0; figure; imagesc(TEST)
 TEST = 255*TEST;
-imagesc(ax1,xaxis,zaxis(1:670),TEST(1:670,:));
+imagesc(ax1,xaxis,zaxis(1:size(VELOCITIES,1)),TEST(1:size(VELOCITIES,1),:));
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 colormap(ax1,'gray');
 caxis([0 25])
 ax2 = axes;
-imagesc(ax2,YMTotalSmoothed(1:670,:),'alphadata',YMTotalSmoothed(1:670,:)>0);
+imagesc(ax2,YMTotalSmoothed(1:size(VELOCITIES,1),:),'alphadata',YMTotalSmoothed(1:size(VELOCITIES,1),:)>0);
 colormap(ax2,'jet');
-TEST2 = YMTotalSmoothed(1:670,:)
+TEST2 = YMTotalSmoothed(1:size(VELOCITIES,1),:)
 TEST2(TEST2==0) = NaN;
-CLow = quantile(TEST2,0.25,'all');
-CHigh = quantile(TEST2,0.75,'all');
+CLow = quantile(TEST2,0.1,'all');
+CHigh = quantile(TEST2,0.9,'all');
 % caxis(ax2,[0 1000]);
 caxis(ax2,[CLow CHigh])
 ax2.Visible = 'off';
@@ -661,9 +706,9 @@ h = colorbar;
 ylabel(h,'YM (kPa)')
 title(ax1,"Young's modulus using shear wave")
 
-export_fig([baseFolder,filesep,'YMOverlaySWNewVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'YMOverlaySWNewVPD',num2str(imageIterator),'.fig'])
-YMSW(:,:,imageIterator) = YMTotalSmoothed;
+filename = ([baseFolder,filesep,'YMOverlaySW',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
+% YMSW(:,:,imageIterator) = YMTotalSmoothed;
 
 
 close all force; 
@@ -685,16 +730,16 @@ xCentroidsRight = allCentroids(1:2:end);
 yCentroidsRight = allCentroids(2:2:end);
 
 
-TEST = mat2gray(abs(IQData(1:670,:,imageIterator)));
+TEST = mat2gray(abs(IQData(1:size(VELOCITIES,1),:,imageIterator)));
 % TEST(TEST>0.1) = 0.1; TEST(TEST<0) = 0; figure; imagesc(TEST)
 TEST = 255*TEST;
-imagesc(ax1,xaxis,zaxis(1:670),TEST(1:670,:));
+imagesc(ax1,xaxis,zaxis(1:size(VELOCITIES,1)),TEST(1:size(VELOCITIES,1),:));
 ylabel('Depth (mm)')
 xlabel('Distance (mm)')
 colormap(ax1,'gray');
 caxis([0 25])
 ax2 = axes;
-imagesc(ax2,TotalMask(1:670,:),'alphadata',TotalMask(1:670,:))
+imagesc(ax2,TotalMask(1:size(VELOCITIES,1),:),'alphadata',TotalMask(1:size(VELOCITIES,1),:))
 % imagesc(ax2,YMTotalSmoothed(1:670,:),'alphadata',YMTotalSmoothed(1:670,:)>0);
 % colormap(ax2,'jet');
 % TEST2 = YMTotalSmoothed(1:670,:)
@@ -714,8 +759,8 @@ linkprop([ax1 ax2],'Position');
 title(ax1,"Mean Young's modulus using shear wave")
 
 
-export_fig([baseFolder,filesep,'YMAvgOverlayVPD',num2str(imageIterator),'.png'])
-save([baseFolder,filesep,'YMAvgOverlayVPD',num2str(imageIterator),'.fig'])
+filename = ([baseFolder,filesep,'YMAvgOverlay',num2str(imageIterator)])
+figSave(filename,'.png',figFlag)
 % sensorInstron = [47.91195
 % 44.8882
 % 39.04582
@@ -893,3 +938,6 @@ save([baseFolder,filesep,'YMAvgOverlayVPD',num2str(imageIterator),'.fig'])
 % save([baseFolder,filesep,'YMOverlayInstron',num2str(imageIterator),'.fig'])
 % YMI(:,:,imageIterator) = YMTotalSmoothed;
 end
+
+save([baseFolder,filesep,'stressStrainandYM.mat'],'YMSensorStack','strainStack','sensorStressStack',...
+    'YMStack','YMLeftStack','YMRightStack')

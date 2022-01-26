@@ -5,9 +5,10 @@ function createDynamicGIFs(folders,CAXIS,CMAP)
     numberOfPositions = length(folders)
     folders = natsortfiles(folders);
     for folderIndex = 1:numberOfPositions
-        load([folders(folderIndex).folder,filesep,'speedProcessing.mat'],'xaxis','zaxis','TOF_speed')
+        load([folders(folderIndex).folder,filesep,'speedProcessing.mat'],'xaxis','zaxis','TOF_speed','corrCoeff')
         TOF_speed = imresize(TOF_speed,[length(zaxis) length(xaxis)]);
         VELOCITIES(:,:,folderIndex) = TOF_speed;
+        CC(:,:,folderIndex) = corrCoeff;
     end
     
     figure; imagesc(VELOCITIES(:,:,1))

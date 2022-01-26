@@ -1,8 +1,8 @@
-clearvars;
-CSVFiles = natsortfiles(rdir('E:\Instron\thinAgarPhantom121221.is_comp_RawData\*.csv'))
-sensor = 1:7;
-soft = 8:14
-stiff = 15:21
+% clearvars;
+CSVFiles = natsortfiles(rdir('D:\AgarHalfHalf01142022\agar_phantom_RIP_9.is_comp_RawData\*.csv'))
+sensor = 1:6;
+soft = 7:12
+stiff = 1:6
 counter = 1;
 clearvars Extension Load
 for k = stiff
@@ -28,8 +28,8 @@ opts = delimitedTextImportOptions("NumVariables", 3);
     % Import the data
     SpecimenRawData1 = readtable(CSVFiles(k).name, opts);
     
-    Extension(counter,:) = table2array(SpecimenRawData1(1:160,1));
-    Load(counter,:) = table2array(SpecimenRawData1(1:160,2));
+    Extension(counter,:) = table2array(SpecimenRawData1(1:120,1));
+    Load(counter,:) = table2array(SpecimenRawData1(1:120,2));
     counter = counter+1;
 end
 
