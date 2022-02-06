@@ -1,5 +1,5 @@
 clearvars;
-baseFolder = 'D:\AgarHalfHalf01142022';
+baseFolder = 'G:\020322AgarLayeredPhantom';
 startDepth = 1;
 lowerBound = 1395
 
@@ -569,7 +569,7 @@ YMRight(isinf(YMRight)) = 0;
 YMTotal = YMLeft + YMRight;
 YMTotal(YMTotal==0) = NaN;
 YMTotal = filloutliers(YMTotal,'nearest');
-figure; imagesc(YMTotal/1000); colormap(jet); caxis([0 100]) % in kPa
+figure; imagesc(YMTotal/1000); colormap(jet); caxis([0 1000]) % in kPa
 figure; imagesc(YMTotal)
 YMTotal(isnan(YMTotal)) = 0;
 % figure; imagesc(YMLeft); caxis([0 600]);

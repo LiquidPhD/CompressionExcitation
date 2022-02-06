@@ -1,22 +1,23 @@
-clearvars;
-baseFolder = 'D:\AgarHalfHalf01142022';
+clearvars -except b;
+baseFolder = 'G:\020322AgarLayeredPhantom';
 %
 folders = rdir([baseFolder,filesep,'Dynamic\*\**\*Param*']);
 % [lowerBound] = selectLowerBound(folders)
 lowerBound = 1395
-filterFlag = 0;
-%% Process dynamic data
+filterFlag = 1;
+% Process dynamic data
 
-for folderIndex = 88:length(folders)
+for folderIndex = 1:length(folders)
     
     % Load dynamic data
     [IQData,VMIQ,vec_phase_diff,Parameters] = loadDynamicData(folders,folderIndex,lowerBound);
-    
+    IQData = IQData(1:750,:,:);
+    vec_phase_diff = vec_phase_diff(1:750,:,:);
     % 2D Loupas
 sdl = ones([1 size(IQData,2)]);
-[~,Loupas_phase_shift] = ...
-    Loupas_estimator_USE(IQData, sdl);
-Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
+% [~,Loupas_phase_shift] = ...
+%     Loupas_estimator_USE(IQData, sdl);
+% Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
 
     % Get particle velocity
 %     [particleVelocity,BScan] = calculateParticleVelocity(IQData,Parameters);
@@ -40,7 +41,7 @@ Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
     % TOF algorithm
     position = [0 0 0 0]
     N_radius = 20
-    [TOF_speed] = runTOF(double(vec_phase_diff),Parameters,folderIndex,position,N_radius)
+    [TOF_speed,corrCoeff] = runTOF(double(vec_phase_diff),Parameters,folderIndex,position,N_radius)
     pause(10)
     save([folders(folderIndex).folder,filesep,'speedProcessing.mat'],'-v7.3')
     

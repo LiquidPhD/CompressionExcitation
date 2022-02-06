@@ -221,9 +221,12 @@ disp_z = particleVelocity(:,:,2:90);  % The first frame is normally very noisy.
 
 % TOF = zeros(Nz_desamp,Nx);
 tic();
-for ii = 1:1:size(disp_z_smooth_desamp_interp,1)
-    counter = 1;
-    for jj = N_radius+1:Nx-N_radius
+% ppm = ParforProgressbar(size(disp_z_smooth_desamp_interp,1));
+parfor_progress(size(disp_z_smooth_desamp_interp,1))
+jjRange = N_radius+1:Nx-N_radius;
+parfor ii = 1:size(disp_z_smooth_desamp_interp,1)
+%     counter = 1;
+    for jj = jjRange
         waveform_left = squeeze(disp_z_smooth_desamp_interp(ii,jj-N_radius,:));
                 waveform_left = [filter(b,1,waveform_left(delay+1:end)); zeros(1,delay)'];
                 waveform_left = detrend(waveform_left);
@@ -239,12 +242,16 @@ for ii = 1:1:size(disp_z_smooth_desamp_interp,1)
 [acor,lag] = xcorr(waveform_left,waveform_right);
         [~,I] = max(acor);
         TOF(ii,jj) = abs(lag(I)*delta_t_interp);
-                        progressbar([],counter/length(N_radius+1:Nx-N_radius))
-counter = counter+1;
-    end
-                progressbar(ii/size(disp_z_smooth_desamp_interp,1))
+%                         progressbar([],counter/length(N_radius+1:Nx-N_radius))
+% counter = counter+1;
+% ppm.increment
 
+    end
+%                 progressbar(ii/size(disp_z_smooth_desamp_interp,1))
+parfor_progress;
 end
+% delete(ppm);
+parfor_progress(0);
         toc();
         TOF_speed = 2*N_radius*Parameters.delta_x./TOF;
         elasticity = density*TOF_speed.^2/1000;

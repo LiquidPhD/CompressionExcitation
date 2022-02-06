@@ -1,5 +1,5 @@
 % clearvars;
-CSVFiles = natsortfiles(rdir('D:\AgarHalfHalf01142022\agar_phantom_RIP_9.is_comp_RawData\*.csv'))
+CSVFiles = natsortfiles(rdir('G:\AgarHalfHalf01142022\agar_phantom_RIP_9.is_comp_RawData\*.csv'))
 sensor = 1:6;
 soft = 7:12
 stiff = 1:6
@@ -49,45 +49,69 @@ r = d/2;
 SA = pi*r^2 % mm^2
 SAm = SA*1e-6
 hm = h*1e-3
-STRESS = Load/SA;
-STRAIN = Extension/h;
+STRESS = Load/SA; % N / mm^2 is MPa, 1x10^6 Pa
+STRAIN = Extension/h; % mm / mm is  unitless
 figure; plot(STRAIN*100,STRESS)
-ylabel('Stress')
+ylabel('Stress (MPa)')
 xlabel('Strain (%)')
 title('Stiff stress vs strain')
 % Units: N/m^2
 
 STRESSm = Load/SAm
-STRAINm = Extension/hm;
+STRAINm = Extension/h; % should be the same whether changing to m since it is a ratio...
 
-figure; plot(STRAINm,STRESSm);
+figure; plot(STRAINm,STRESSm); % Uses Pa
+ylabel('Stress (Pa)')
+xlabel('Strain')
+title('Stiff stress vs strain')
 
+figure; plot(STRAINm*100,STRESSm); % Uses Pa
+ylabel('Stress (Pa)')
+xlabel('Strain (%)')
+title('Stiff stress vs strain')
+% Get slopes
+% From cftool: 2.412e+06*x.^2+1.095e+05*x-380.3 if in Pa or
+% 2.412*x.^2+0.1095*x-0.0003803 if using MPa
+% Derivative would be... 2*2.412e+06*x+1.095e+05 or 2*2.412*x+0.1095
+y = 2.412e+06*STRAINm.^2+1.095e+05*STRAINm-380.3;
+yprime = 2*2.412e+06*STRAINm+1.095e+05;
+figure; plot(y)
+figure; plot(yprime)
 
-STRAIN = STRAIN(62:end);
-STRESS = STRESS(62:end);
-figure; plot(STRAIN,STRESS)
+figure; 
+plot(STRAINm,STRESSm); hold on;
+plot(STRAINm,y); hold off; 
 
-firstIndex = 70
-secondIndex = 40
-(STRESS(firstIndex)-STRESS(secondIndex)) / (STRAIN(firstIndex)-STRAIN(secondIndex))
-
-% Units: N/m^2
-
-STRESSm = Load/SAm
-STRAINm = Extension/hm;
-
-(STRESSm(firstIndex)-STRESSm(secondIndex)) / (STRAINm(firstIndex)-STRAINm(secondIndex))
-
-% Strain pct
-figure; plot(STRAIN,STRESS)
-
-% Sliding window slopes
-windowLength = 10;
-for k = windowLength:length(STRAIN)
-    slopeInstron(k-(windowLength-1)) = (STRESSm(k)-STRESSm(k-(windowLength-1))) / (STRAINm(k)-STRAINm(k-(windowLength-1)))
-end
-
-figure; plot(slopeInstron)
-
-STRESSm(/STRAINm
+figure; 
+plot(STRAINm*100,yprime)
+ylabel('Change in stress (Pa)')
+xlabel('Strain (%)')
+title('Stiff stress vs strain')
+% STRAIN = STRAIN(62:end);
+% STRESS = STRESS(62:end);
+% figure; plot(STRAIN,STRESS)
+% 
+% firstIndex = 70
+% secondIndex = 40
+% (STRESS(firstIndex)-STRESS(secondIndex)) / (STRAIN(firstIndex)-STRAIN(secondIndex))
+% 
+% % Units: N/m^2
+% 
+% STRESSm = Load/SAm
+% STRAINm = Extension/hm;
+% 
+% (STRESSm(firstIndex)-STRESSm(secondIndex)) / (STRAINm(firstIndex)-STRAINm(secondIndex))
+% 
+% % Strain pct
+% figure; plot(STRAIN,STRESS)
+% 
+% % Sliding window slopes
+% windowLength = 10;
+% for k = windowLength:length(STRAIN)
+%     slopeInstron(k-(windowLength-1)) = (STRESSm(k)-STRESSm(k-(windowLength-1))) / (STRAINm(k)-STRAINm(k-(windowLength-1)))
+% end
+% 
+% figure; plot(slopeInstron)
+% 
+% STRESSm(/STRAINm
 
