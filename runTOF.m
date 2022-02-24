@@ -224,7 +224,7 @@ tic();
 % ppm = ParforProgressbar(size(disp_z_smooth_desamp_interp,1));
 parfor_progress(size(disp_z_smooth_desamp_interp,1))
 jjRange = N_radius+1:Nx-N_radius;
-parfor ii = 1:size(disp_z_smooth_desamp_interp,1)
+for ii = 1:size(disp_z_smooth_desamp_interp,1)
 %     counter = 1;
     for jj = jjRange
         waveform_left = squeeze(disp_z_smooth_desamp_interp(ii,jj-N_radius,:));

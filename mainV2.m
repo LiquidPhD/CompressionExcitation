@@ -1,18 +1,18 @@
 clearvars -except b;
-baseFolder = 'G:\020322AgarLayeredPhantom';
+baseFolder = 'D:\halfCookedBeefWithSensor100umstep_2';
 %
 folders = rdir([baseFolder,filesep,'Dynamic\*\**\*Param*']);
 % [lowerBound] = selectLowerBound(folders)
 lowerBound = 1395
-filterFlag = 1;
+filterFlag = 0;
 % Process dynamic data
 
 for folderIndex = 1:length(folders)
     
     % Load dynamic data
     [IQData,VMIQ,vec_phase_diff,Parameters] = loadDynamicData(folders,folderIndex,lowerBound);
-    IQData = IQData(1:750,:,:);
-    vec_phase_diff = vec_phase_diff(1:750,:,:);
+    IQData = IQData(1:lowerBound,:,:);
+    vec_phase_diff = vec_phase_diff(1:lowerBound,:,:);
     % 2D Loupas
 sdl = ones([1 size(IQData,2)]);
 % [~,Loupas_phase_shift] = ...
@@ -79,7 +79,7 @@ caxis([-0.1 0.1])
 end
 
 
-createDynamicGIFs(folders,[0 20],'jet')
+createDynamicGIFs(folders,[0 10],'jet')
 createDynamicGIFsSmoothed(folders,[3 5],'jet')
 
 %% Process static data

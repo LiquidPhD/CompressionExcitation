@@ -1,5 +1,5 @@
 clearvars;
-baseFolder = 'G:\020322AgarLayeredPhantom';
+baseFolder = 'D:\halfCookedBeefWithSensor100umstep_2';
 startDepth = 1;
 lowerBound = 1395
 
@@ -64,7 +64,7 @@ sdl = ones([1 size(IQData,2)]);
     Loupas_estimator_USE(IQData, sdl);
 Loupas_phase_shift = permute(Loupas_phase_shift,[2 1 3]);
 
-displacementData = cumsum(Loupas_phase_shift,3);
+displacementData = cumsum(vec_phase_diff,3);
 
 % Use frames 1:26
 % Loupas_phase_shift = Loupas_phase_shift(:,:,1:26);
@@ -78,14 +78,15 @@ taxis = linspace(0,(Nt-1)*Parameters.delta_t,Nt);
 % zaxis = zaxis(startDepth:end);
 images = mat2gray(abs(IQData));
 figFlag = 0;
-
+pulseSelectorFlag = 0 ;
 
 % Either load label data or make it
 try
     load([baseFolder,filesep,'labels.mat'])
 catch
 volumeSegmenter
-uiwait;
+mydlg = warndlg('Close when done...', 'Close when done');
+waitfor(mydlg);
 save([baseFolder,filesep,'labels.mat'],'labels')
 end
 
@@ -122,8 +123,8 @@ colorbar;
 filename = [baseFolder,filesep,'Disp',num2str(imageIterator)];
 figSave(filename,'.png',figFlag)
 % save([baseFolder,filesep,'Disp',num2str(imageIterator),'.fig'])
-% Separate out labels
 
+% Separate out labels
 for k = 1:size(labels,3)
     label = labels(:,:,k);
     sensor = zeros([size(label,1) size(label,2)]);
@@ -450,12 +451,36 @@ figSave(filename,'.png',figFlag)
 %     usableSensor = filloutliers(usableSensor,'nearest');
 sensorTop = sensor_bdl-30;
 % sensorTop = filloutliers(sensorTop,'nearest')
+YM_sensor(YM_sensor==0) = NaN;
 for k = 1:size(YM_sensor,2)
     
     YMMean(:,k) = mean(YM_sensor(sensorTop(k):end,k),1,'omitnan');
+%     figure(1);
+%     scatter(1:size(YMMean,2),YMMean(:,k));
+%     pause(0.05)
 end
-YMMean(287:359) = NaN;
+
+TEST = mean(YM_sensor(50:150,:),'omitnan')
+
+if pulseSelectorFlag == 0
+figure; 
+imagesc(abs(YM_sensor(1:size(VELOCITIES,1),:))/1000)
+ylabel('Depth (mm)')
+xlabel('Distance (mm)')
+title("Sensor Young's modulus")
+h = colorbar;
+ylabel(h,'YM (kPa)')
+caxis([0 200])
+[xSelector,~] = ginput(2);
+xSelector = round(xSelector);
+close all force; 
+% YMMean(287:359) = NaN;
+pulseSelectorFlag = 1;
+end
+YMMean(xSelector(1):xSelector(2)) = NaN;
 YMMean(YMMean==0) = NaN;
+figure; 
+plot(YMMean)
 % 
 % % Manual selection
 % figure; plot(YMMean); hold on;
@@ -939,5 +964,11 @@ figSave(filename,'.png',figFlag)
 % YMI(:,:,imageIterator) = YMTotalSmoothed;
 end
 
+YMLeftStack = squeeze(YMLeftStack); YMRightStack = squeeze(YMRightStack);
+YMLeftStack = YMLeftStack(2:end); YMRightStack = YMRightStack(2:end);
+
 save([baseFolder,filesep,'stressStrainandYM.mat'],'YMSensorStack','strainStack','sensorStressStack',...
     'YMStack','YMLeftStack','YMRightStack')
+
+figure;
+plot(YMLeftStack); hold on; plot(YMRightStack); hold off; 
